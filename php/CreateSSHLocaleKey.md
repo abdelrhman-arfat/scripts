@@ -3,8 +3,8 @@
 ## Generate key
 
 ```bash
-ssh-keygen -t rsa -b 4096 -C "youremail" -f ~/.ssh/id_storage_ssh
-ssh-copy-id -i ~/.ssh/id_storage_ssh.pub -p your_port user@host
+ssh-keygen -t rsa -b 4096 -C "youremail" -f ~/.ssh/your_ssh_key
+ssh-copy-id -i ~/.ssh/your_ssh_key.pub -p your_port user@host
 ```
 
 ## Use Deploy ssh command
@@ -13,9 +13,6 @@ ssh-copy-id -i ~/.ssh/id_storage_ssh.pub -p your_port user@host
 
 ```bash
 #!/bin/bash
-
-#!/bin/bash
-
 # Server credentials
 SERVER_USER="user"
 SERVER_HOST="host"
@@ -26,4 +23,11 @@ SSH_KEY="/c/Users/COMPUMARTS/.ssh/your_ssh_key"
 # Connect to server and run CD.sh automatically
 ssh -i $SSH_KEY -p $SERVER_PORT $SERVER_USER@$SERVER_HOST "cd $PROJECT_PATH && bash CD.sh"
 
+```
+
+## Delete the key :
+
+```bash
+  rm ~/.ssh/your_ssh_key
+  rm ~/.ssh/your_ssh_key.pub
 ```
