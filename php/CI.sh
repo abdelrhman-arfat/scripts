@@ -50,7 +50,7 @@ fi
 # Ask for merge confirmation
 printf "🔄 ${BOLD}Do you want to merge development into main? (y/n):${RESET} "
 read confirm
-if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+if [[ "${confirm,,}" == "y" ]]; then
   printf "${YELLOW}🔀 Switching to main branch...${RESET}\n"
   git checkout main
   git pull origin main
@@ -59,6 +59,16 @@ if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
   git push origin main
   printf "${GREEN}✅ Successfully merged and pushed to main!${RESET}\n"
   git checkout dev
+
+  printf "🔄 ${BOLD}Do you want to Deploy new updates ? (y/n):${RESET} "
+  read confirmDeploy
+  if [[ "${confirmDeploy,,}" == "y" ]]; then
+    printf "${YELLOW}🔀 Deploying new updates...\n"
+    bash Deploy.sh
+  else
+    printf "${BLUE}ℹ️ Doesn't deployed \n"
+  fi
+
 else
   printf "${BLUE}ℹ️ Skipped merging to main.${RESET}\n"
 fi
