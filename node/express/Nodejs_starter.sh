@@ -159,7 +159,7 @@ echo '{
 
 # src structure
 echo -e "${YELLOW}➡️ Generating src structure...${NC}"
-mkdir -p src/{utils,services,constants,controllers,models,routes,middleware,validations,tests,worker}
+mkdir -p src/{Utils,Config,Services,Constants,Controllers,Models,Routes,Middleware,Validations,tests}
 touch src/index.ts
 echo -e "${GREEN}✅ src structure with index.ts created${NC}"
 

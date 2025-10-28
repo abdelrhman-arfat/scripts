@@ -37,17 +37,20 @@ if [ "$current_branch" != "dev" ]; then
   git checkout dev
 fi
 
+timestamp=$(date +"%Y-%m-%d %H:%M:%S")
 
 # Pull latest changes
 printf "${BLUE}⬇️  Pulling latest changes from dev...${RESET}\n"
 git pull origin dev
 
 
+
+
 # Check for changes before committing
 if [ -n "$(git status --porcelain)" ]; then
   printf "${CYAN}🚀 Staging and committing changes...${RESET}\n"
   git add .
-  git commit -m "ci: $msg"
+  git commit -m "(CI pushed at: $timestamp): $msg"
   printf "${GREEN}✅ Commit created successfully!${RESET}\n"
   git push origin dev
   printf "${GREEN}⬆️  Pushed to dev branch!${RESET}\n"
@@ -64,7 +67,8 @@ if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
   git checkout main
   git pull origin main
   printf "${CYAN}🔄 Merging dev into main...${RESET}\n"
-  git merge dev -m "merge after '$msg'"
+  merge_message="merge after '$msg' (CI merge: $timestamp)"
+  git merge dev -m "$merge_message"
   git push origin main
   printf "${GREEN}✅ Successfully merged and pushed to main!${RESET}\n"
   git checkout dev
