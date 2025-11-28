@@ -2,144 +2,101 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\GeneratorCommand;
+use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
-class MakeService extends GeneratorCommand
+class MakeService extends Command
 {
-    protected $name = 'make:service';
-    protected $description = 'Create a new HTTP Service and Interface';
-    protected $type = 'Service';
+    protected $signature = 'make:service
+                            {name : The service name}
+                            {--model : Generate a database repository service}';
 
-    /**
-     * Default namespace for Services
-     */
-    protected function getDefaultNamespace($rootNamespace)
-    {
-        return $rootNamespace . '\Http\Services';
-    }
+    protected $description = 'Create a Domain Service or Repository Service with Interface';
 
-    protected function getStub()
-    {
-        return '';
-    }
-
-
-    /**
-     * Handle the command
-     */
     public function handle()
     {
         $name = $this->argument('name');
+        $isModel = $this->option('model');
 
         // إزالة أي suffix Service
         $baseName = Str::replaceLast('Service', '', $name);
 
-        $interfaceName = $baseName . 'Interface';
         $serviceName = $baseName . 'Service';
+        $interfaceName = $baseName . 'Interface';
+
+        // اختيار المجلدات حسب الخيار
+        if ($isModel) {
+            $rootFolder = 'Repositories';
+            $namespaceRoot = 'App\\Repositories';
+        } else {
+            $rootFolder = 'Domain';
+            $namespaceRoot = 'App\\Domain';
+        }
+
+        // المجلدات الفرعية
+        $interfaceDir = app_path("{$rootFolder}/Interfaces");
+        $serviceDir   = app_path("{$rootFolder}/Services");
+
+        // إنشاء المجلدات إذا لم توجد
+        if (!is_dir($interfaceDir)) mkdir($interfaceDir, 0755, true);
+        if (!is_dir($serviceDir)) mkdir($serviceDir, 0755, true);
 
         // إنشاء Interface
-        $this->createInterface($baseName);
+        $this->createInterface($interfaceDir, $namespaceRoot . '\\Interfaces', $baseName);
 
         // إنشاء Service
-        $this->createService($baseName);
+        $this->createService($serviceDir, $namespaceRoot . '\\Services', $namespaceRoot . '\\Interfaces', $baseName);
 
-        // تسجيل bind في ServiceProvider
-        $this->registerInServiceProvider($baseName, $serviceName);
-        $bindLine = "\$this->app->bind(\\App\\Http\\Contracts\\{$baseName}Interface::class, \\App\\Http\\Services\\{$serviceName}::class);";
+        // طباعة bind جاهز للنسخ
+        $bindLine = "\$this->app->bind(\\{$namespaceRoot}\\Interfaces\\{$interfaceName}::class, \\{$namespaceRoot}\\Services\\{$serviceName}::class);";
         $this->line($bindLine);
+
         $this->info("Service & Interface created successfully.");
     }
 
-    /**
-     * Create the Interface
-     */
-    protected function createInterface($baseName)
+    protected function createInterface($dir, $namespace, $baseName)
     {
-        $interfaceDir = app_path('Http/Contracts');
-
-        if (!is_dir($interfaceDir)) {
-            mkdir($interfaceDir, 0755, true);
-        }
-
-        $interfacePath = $interfaceDir . '/' . $baseName . 'Interface.php';
+        $interfacePath = $dir . '/' . $baseName . 'Interface.php';
 
         if (!file_exists($interfacePath)) {
             $interfaceContent = <<<PHP
 <?php
 
-namespace App\Http\Contracts;
+namespace {$namespace};
 
 interface {$baseName}Interface
 {
     //
 }
 PHP;
-
             file_put_contents($interfacePath, $interfaceContent);
-            $this->info("Interface created: Http/Contracts/{$baseName}Interface.php");
+            $this->info("Interface created: {$interfacePath}");
         } else {
-            $this->info("Interface already exists: Http/Contracts/{$baseName}Interface.php");
+            $this->info("Interface already exists: {$interfacePath}");
         }
     }
 
-    /**
-     * Create the Service
-     */
-    protected function createService($baseName)
+    protected function createService($dir, $namespace, $interfaceNamespace, $baseName)
     {
-        $serviceDir = app_path('Http/Services');
-
-        if (!is_dir($serviceDir)) {
-            mkdir($serviceDir, 0755, true);
-        }
-
-        $servicePath = $serviceDir . '/' . $baseName . 'Service.php';
+        $servicePath = $dir . '/' . $baseName . 'Service.php';
 
         if (!file_exists($servicePath)) {
             $serviceContent = <<<PHP
 <?php
 
-namespace App\Http\Services;
+namespace {$namespace};
 
-use App\Http\Contracts\\{$baseName}Interface;
+use {$interfaceNamespace}\\{$baseName}Interface;
 
 class {$baseName}Service implements {$baseName}Interface
 {
     //
 }
 PHP;
-
             file_put_contents($servicePath, $serviceContent);
-            $this->info("Service created: Http/Services/{$baseName}Service.php");
+            $this->info("Service created: {$servicePath}");
         } else {
-            $this->info("Service already exists: Http/Services/{$baseName}Service.php");
-        }
-    }
-
-    /**
-     * Register the Service bind in AppServiceProvider
-     */
-    protected function registerInServiceProvider($baseName, $serviceName)
-    {
-        $providerPath = app_path('Providers/AppServiceProvider.php');
-        $content = file_get_contents($providerPath);
-
-        $bindCode = "        \$this->app->bind(\\App\\Http\\Contracts\\{$baseName}Interface::class, \\App\\Http\\Services\\{$serviceName}::class);";
-
-        if (!str_contains($content, $bindCode)) {
-            // أضف bind داخل دالة register
-            $content = preg_replace(
-                '/public function register\(\)\s*\{/',
-                "public function register()\n    {\n{$bindCode}",
-                $content,
-                1
-            );
-
-            file_put_contents($providerPath, $content);
-            $this->info("Service bound in AppServiceProvider");
-        } else {
-            $this->info("Service already bound in AppServiceProvider");
+            $this->info("Service already exists: {$servicePath}");
         }
     }
 }
